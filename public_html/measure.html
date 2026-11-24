@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="/js/owner-shell.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1B2A6B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PTPC">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96.png">
+<script>
+// One app helper (sw.js) for every page. Never unregister it: that cancels the owner's phone alerts (2026-11-15).
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
+<title>Measure an Area — Patriot Total Property Care</title>
+<link rel="stylesheet" href="/assets/fonts.css">
+<!-- Self-hosted Leaflet (BSD-2) — files must be in assets/vendor/leaflet/ -->
+<link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css">
+<style>
+:root {
+  --navy:#1B2A6B; --red:#C8102E; --green:#2D6A2D;
+  --amber:#D97706; --sky:#2563EB;
+  --bg:#F4F6FB; --card:#fff; --border:#DDE2EF;
+  --text:#1A1D2E; --muted:#6B7280;
+  --radius:10px; --shadow:0 2px 14px rgba(27,42,107,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--text)}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100vh}
+header{background:var(--navy);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+header h1{font-family:Oswald,sans-serif;font-size:1.1rem;letter-spacing:.5px;flex:1}
+.close-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:6px 12px;font-size:.8rem;font-family:inherit;cursor:pointer;font-weight:600}
+.close-btn:hover{background:rgba(255,255,255,.25)}
+
+/* ── CONTROLS ── */
+.controls{background:var(--card);border-bottom:1px solid var(--border);padding:12px 14px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+
+/* address row */
+.addr-row{display:flex;gap:8px}
+.addr-input{flex:1;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:.9rem;color:var(--text)}
+.addr-input:focus{outline:2px solid var(--navy);outline-offset:1px}
+.btn{border:none;border-radius:8px;padding:9px 16px;font-family:inherit;font-size:.85rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:opacity .15s,transform .1s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-navy:hover{opacity:.88}
+.btn-navy:disabled{opacity:.4;cursor:not-allowed}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{opacity:.88}
+.btn-green:disabled{opacity:.4;cursor:not-allowed}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{opacity:.88}
+.btn-amber{background:var(--amber);color:#fff}
+.btn-amber:hover{opacity:.88}
+.btn-sky{background:var(--sky);color:#fff}
+.btn-sky:hover{opacity:.88}
+.btn-sm{padding:7px 12px;font-size:.78rem}
+
+/* layer toggle */
+.layer-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.layer-row span{font-size:.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:4px}
+.layer-btn{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 12px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.layer-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* draw toolbar */
+.draw-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* autocomplete dropdown */
+.ac-wrap{position:relative;flex:1}
+.ac-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;z-index:9999;max-height:200px;overflow-y:auto;display:none}
+.ac-list.show{display:block}
+.ac-item{padding:9px 12px;font-size:.85rem;cursor:pointer;border-bottom:1px solid var(--border)}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover{background:var(--bg)}
+
+/* ── MAP ── */
+#map{flex:1;min-height:0}
+
+/* ── RESULTS PANEL ── */
+.results{background:var(--card);border-top:1px solid var(--border);padding:12px 14px;flex-shrink:0;display:none}
+.results.show{display:block}
+.results-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.result-stat{text-align:center;padding:8px 16px;background:var(--bg);border-radius:8px;min-width:110px}
+.result-val{font-family:Oswald,sans-serif;font-size:1.5rem;color:var(--navy);line-height:1}
+.result-lbl{font-size:.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.results-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── STATUS BAR ── */
+.status-bar{position:absolute;bottom:0;left:0;right:0;background:rgba(27,42,107,.82);color:#fff;font-size:.75rem;padding:6px 12px;pointer-events:none;z-index:1000;display:none}
+.status-bar.show{display:block}
+#map-wrap{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
+
+/* ── DRAWING CURSOR ── */
+.drawing #map{cursor:crosshair !important}
+.drawing .leaflet-container{cursor:crosshair !important}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:9px 18px;border-radius:8px;font-size:.83rem;font-weight:600;z-index:99999;pointer-events:none;opacity:0;transition:all .25s;max-width:90vw;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.success{background:var(--green)}
+#toast.warn{background:var(--amber)}
+#toast.error{background:var(--red)}
+
+/* ── SPINNER ── */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .controls{padding:10px}
+  .layer-row,.draw-row{flex-wrap:wrap}
+  .results-actions{margin-left:0;width:100%}
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header>
+    <span style="font-size:1.2rem">📐</span>
+    <h1>Measure an Area</h1>
+    <button class="close-btn" onclick="closeTool()">✕ Close</button>
+  </header>
+
+  <!-- ── CONTROLS ── -->
+  <div class="controls">
+    <!-- Address search -->
+    <div class="addr-row">
+      <div class="ac-wrap">
+        <input type="text" class="addr-input" id="addrInput"
+               placeholder="Enter property address…"
+               autocomplete="off"
+               oninput="onAddrInput(this.value)"
+               onkeydown="onAddrKey(event)">
+        <div class="ac-list" id="acList"></div>
+      </div>
+      <button class="btn btn-navy" id="searchBtn" onclick="geocodeAddr()">🔍 Go</button>
+      <button class="btn btn-sky btn-sm" onclick="locateMe()" title="Use my location">📍 Me</button>
+    </div>
+
+    <!-- Layer toggle -->
+    <div class="layer-row">
+      <span>Map layer:</span>
+      <button class="layer-btn active" id="lyrStreet" onclick="setLayer('street')">🗺 Street</button>
+      <button class="layer-btn" id="lyrSat" onclick="setLayer('satellite')">🛰 Satellite</button>
+      <button class="layer-btn" id="lyrUSGS" onclick="setLayer('usgs')">🛰 USGS Imagery</button>
+    </div>
+
+    <!-- Draw toolbar -->
+    <div class="draw-row">
+      <button class="btn btn-amber" id="btnDraw" onclick="startDraw()">✏️ Draw Area</button>
+      <button class="btn btn-red btn-sm" id="btnUndo" onclick="undoPoint()" disabled>↩ Undo</button>
+      <button class="btn btn-green btn-sm" id="btnFinish" onclick="finishPoly()" disabled>✅ Finish</button>
+      <button class="btn btn-sm" style="background:var(--bg);border:1px solid var(--border)" id="btnClear" onclick="clearAll()" disabled>🗑 Clear</button>
+    </div>
+    <div id="drawHint" style="font-size:.78rem;color:var(--muted)">Enter an address to center the map, then click "Draw Area" and mark the corners of the area to be serviced — yard, driveway, patio, walkway or pavers.</div>
+  </div>
+
+  <!-- ── MAP ── -->
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div class="status-bar" id="statusBar"></div>
+  </div>
+
+  <!-- ── RESULTS ── -->
+  <div class="results" id="resultsPanel">
+    <div class="results-row">
+      <div class="result-stat">
+        <div class="result-val" id="resSqFt">—</div>
+        <div class="result-lbl">Sq Ft</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-val" id="resAcres">—</div>
+        <div class="result-lbl">Acres</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-val" id="resPoints">—</div>
+        <div class="result-lbl">Points</div>
+      </div>
+      <div class="results-actions">
+        <button class="btn btn-amber btn-sm" onclick="redrawPoly()">↩ Redraw</button>
+        <button class="btn btn-green" id="btnSave" onclick="saveMeasurement()">💾 Save &amp; Use</button>
+      </div>
+    </div>
+    <div id="measureNote" style="font-size:.75rem;color:var(--muted);margin-top:8px">
+      &#8505;&#65039; Area calculated from GPS coordinates using the Shoelace formula. Accuracy depends on how carefully you traced the edges.
+    </div>
+    <!-- Notes field (shown after polygon is finished) -->
+    <div id="saveExtras" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+      <textarea id="measureNotes" rows="2" placeholder="Notes — e.g. driveway + front walk, back patio pavers, front yard only…"
+        style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:.85rem;resize:vertical;color:var(--text)"></textarea>
+    </div>
+  </div>
+
+  <!-- ── SAVED CONFIRMATION (replaces window.confirm) ── -->
+  <div id="savedBanner" style="display:none;background:#e8f5e9;border:1px solid #2D6A2D;border-radius:8px;padding:12px 14px;margin:0 14px 10px;flex-wrap:wrap;gap:10px;align-items:center">
+    <span style="flex:1;font-size:.9rem;color:#1B4D1B;font-weight:600">Measurement saved!</span>
+    <button class="btn btn-sm" style="background:var(--bg);border:1px solid var(--border)" onclick="hideSavedBanner()">Continue</button>
+    <button class="btn btn-green btn-sm" onclick="closeTool()">Close</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="assets/vendor/leaflet/leaflet.js"></script>
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────
+// Read params from URL or postMessage parent
+const params   = new URLSearchParams(location.search);
+const ESTIMATE_ID  = params.get('estimate_id')  || '';
+const PROPERTY_ID  = params.get('property_id')  || '';
+const CUSTOMER_ID  = params.get('customer_id')  || '';
+const INIT_ADDR    = params.get('address')       || '';
+const EMBED_MODE   = params.get('embed') === '1'; // true when in iframe
+
+const HDR = {'X-Requested-With':'ptpc','Content-Type':'application/json'};
+
+// ── TILE LAYERS ────────────────────────────────────────────────────────────
+// All free, open-source or public-domain, no API key required
+const TILES = {
+  street: {
+    url:  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attr: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+    maxZ: 19,
+  },
+  satellite: {
+    // Esri World Imagery — free for non-commercial; good fallback
+    url:  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attr: 'Tiles © Esri',
+    maxZ: 18,
+  },
+  usgs: {
+    // USGS National Map — public domain, US only, 1-2m resolution in Florida
+    url:  'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}',
+    attr: 'USGS National Map (public domain)',
+    maxZ: 16,
+  },
+};
+
+// ── MAP INIT ───────────────────────────────────────────────────────────────
+const DEFAULT_CENTER = [28.5620, -80.8280]; // Titusville FL area
+const DEFAULT_ZOOM   = 17;
+
+const map = L.map('map', {
+  center: DEFAULT_CENTER,
+  zoom: DEFAULT_ZOOM,
+  zoomControl: true,
+});
+
+let currentLayer = null;
+function setLayer(name) {
+  const t = TILES[name];
+  if (!t) return;
+  if (currentLayer) map.removeLayer(currentLayer);
+  currentLayer = L.tileLayer(t.url, {attribution: t.attr, maxZoom: t.maxZ}).addTo(map);
+  document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('lyr' + name.charAt(0).toUpperCase() + name.slice(1));
+  if (btn) btn.classList.add('active');
+  currentLayerName = name;
+}
+let currentLayerName = 'street';
+setLayer('satellite'); // default to satellite — easier to trace property lines
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let drawing   = false;
+let polyPoints = [];   // [[lat,lng], ...]
+let polyLine   = null; // L.polyline (preview while drawing)
+let polyShape  = null; // L.polygon (finished)
+let closeDot   = null; // close-point marker
+let clickPoints= [];   // L.circleMarker[]
+let sqFt       = 0;
+let acres      = 0;
+let savedAddr  = INIT_ADDR;
+
+// ── ADDRESS SEARCH (Nominatim) ─────────────────────────────────────────────
+let acTimer;
+function onAddrInput(val) {
+  clearTimeout(acTimer);
+  if (val.length < 4) { hideAC(); return; }
+  acTimer = setTimeout(() => fetchAC(val), 350);
+}
+
+function onAddrKey(e) {
+  if (e.key === 'Enter') { hideAC(); geocodeAddr(); }
+  if (e.key === 'Escape') hideAC();
+}
+
+async function fetchAC(q) {
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&limit=5&q=${encodeURIComponent(q)}`,
+      {headers: {'Accept-Language':'en'}}
+    );
+    const data = await r.json();
+    if (!data.length) { hideAC(); return; }
+    const list = document.getElementById('acList');
+    list.innerHTML = '';
+    data.forEach(item => {
+      const d = document.createElement('div');
+      d.className = 'ac-item';
+      d.textContent = item.display_name;
+      d.onclick = () => {
+        document.getElementById('addrInput').value = item.display_name;
+        savedAddr = item.display_name;
+        hideAC();
+        flyTo(parseFloat(item.lat), parseFloat(item.lon));
+        placeAddrMarker(parseFloat(item.lat), parseFloat(item.lon));
+      };
+      list.appendChild(d);
+    });
+    list.classList.add('show');
+  } catch(e) { hideAC(); }
+}
+
+function hideAC() {
+  document.getElementById('acList').classList.remove('show');
+}
+
+async function geocodeAddr() {
+  const q = document.getElementById('addrInput').value.trim();
+  if (!q) return;
+  savedAddr = q;
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>';
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&limit=1&q=${encodeURIComponent(q)}`,
+      {headers: {'Accept-Language':'en'}}
+    );
+    const data = await r.json();
+    if (!data.length) { toast('Address not found — try adding FL or city name', 'warn'); return; }
+    flyTo(parseFloat(data[0].lat), parseFloat(data[0].lon));
+    placeAddrMarker(parseFloat(data[0].lat), parseFloat(data[0].lon));
+  } catch(e) {
+    toast('Address lookup failed — check connection', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔍 Go';
+  }
+}
+
+let addrMarker = null;
+function placeAddrMarker(lat, lng) {
+  if (addrMarker) map.removeLayer(addrMarker);
+  addrMarker = L.circleMarker([lat,lng], {
+    radius:7, fillColor:'#C8102E', fillOpacity:.9, color:'#fff', weight:2
+  }).addTo(map).bindPopup('📍 Property address').openPopup();
+}
+
+function flyTo(lat, lng) {
+  map.flyTo([lat, lng], 19, {duration:.8});
+  setStatus(`Centered on ${savedAddr || lat.toFixed(5)+','+lng.toFixed(5)}`);
+}
+
+function locateMe() {
+  if (!navigator.geolocation) { toast('Geolocation not available', 'warn'); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    flyTo(pos.coords.latitude, pos.coords.longitude);
+    placeAddrMarker(pos.coords.latitude, pos.coords.longitude);
+  }, () => toast('Could not get your location', 'warn'), {enableHighAccuracy:true});
+}
+
+// ── DRAWING ────────────────────────────────────────────────────────────────
+function startDraw() {
+  clearAll();
+  drawing = true;
+  document.getElementById('app').classList.add('drawing');
+  document.getElementById('btnDraw').disabled = true;
+  document.getElementById('btnUndo').disabled = false;
+  document.getElementById('btnFinish').disabled = true;
+  document.getElementById('btnClear').disabled = false;
+  document.getElementById('resultsPanel').classList.remove('show');
+  setStatus('Click to add points around the edge of the area. Click the first point to close, or press Finish.');
+  updateHint('Click the corners of the area (yard, driveway, patio, pavers). Press <b>Undo</b> to remove last point, <b>Finish</b> when done.');
+  map.on('click', onMapClick);
+}
+
+function onMapClick(e) {
+  if (!drawing) return;
+  const ll = [e.latlng.lat, e.latlng.lng];
+  polyPoints.push(ll);
+
+  // Draw dot
+  const dot = L.circleMarker(ll, {
+    radius:5, fillColor:'#1B2A6B', fillOpacity:.9, color:'#fff', weight:1.5
+  }).addTo(map);
+  clickPoints.push(dot);
+
+  // Close-zone marker on first point
+  if (polyPoints.length === 1) {
+    closeDot = L.circleMarker(ll, {
+      radius:10, fillColor:'rgba(0,0,0,0)', color:'#D97706', weight:2, dashArray:'4,4'
+    }).addTo(map);
+    closeDot.on('click', () => { if (polyPoints.length >= 3) finishPoly(); });
+  }
+
+  // Update preview line + polygon fill
+  if (polyLine) map.removeLayer(polyLine);
+  if (polyPoints.length >= 2) {
+    polyLine = L.polyline(polyPoints, {color:'#1B2A6B', weight:2, dashArray:'5,4'}).addTo(map);
+  }
+  if (polyPoints.length >= 3) {
+    if (polyShape) map.removeLayer(polyShape);
+    polyShape = L.polygon(polyPoints, {
+      color:'#1B2A6B', weight:2, fillColor:'#1B2A6B', fillOpacity:.15
+    }).addTo(map);
+    document.getElementById('btnFinish').disabled = false;
+  }
+
+  setStatus(`${polyPoints.length} point${polyPoints.length>1?'s':''} added — ${polyPoints.length>=3?'click Finish or click the first point to close':'need at least 3 points'}`);
+}
+
+function undoPoint() {
+  if (!polyPoints.length) return;
+  polyPoints.pop();
+  const dot = clickPoints.pop();
+  if (dot) map.removeLayer(dot);
+  if (polyLine) { map.removeLayer(polyLine); polyLine = null; }
+  if (polyShape) { map.removeLayer(polyShape); polyShape = null; }
+  if (polyPoints.length >= 2) {
+    polyLine = L.polyline(polyPoints, {color:'#1B2A6B', weight:2, dashArray:'5,4'}).addTo(map);
+  }
+  if (polyPoints.length >= 3) {
+    polyShape = L.polygon(polyPoints, {
+      color:'#1B2A6B', weight:2, fillColor:'#1B2A6B', fillOpacity:.15
+    }).addTo(map);
+  }
+  if (polyPoints.length < 3) document.getElementById('btnFinish').disabled = true;
+  setStatus(`Point removed — ${polyPoints.length} remaining`);
+}
+
+function finishPoly() {
+  if (polyPoints.length < 3) { toast('Need at least 3 points', 'warn'); return; }
+  drawing = false;
+  document.getElementById('app').classList.remove('drawing');
+  map.off('click', onMapClick);
+
+  // Clean up preview elements
+  if (polyLine) { map.removeLayer(polyLine); polyLine = null; }
+  clickPoints.forEach(d => map.removeLayer(d));
+  clickPoints = [];
+  if (closeDot) { map.removeLayer(closeDot); closeDot = null; }
+
+  // Draw final filled polygon
+  if (polyShape) map.removeLayer(polyShape);
+  polyShape = L.polygon(polyPoints, {
+    color:'#2D6A2D', weight:2.5, fillColor:'#2D6A2D', fillOpacity:.2
+  }).addTo(map);
+
+  map.fitBounds(polyShape.getBounds().pad(.08));
+
+  // Calculate area
+  const area = shoelaceM2(polyPoints);
+  sqFt  = Math.round(area * 10.7639);
+  acres = (area / 4046.86).toFixed(3);
+
+  // Show results
+  document.getElementById('resSqFt').textContent  = sqFt.toLocaleString();
+  document.getElementById('resAcres').textContent  = acres;
+  document.getElementById('resPoints').textContent = polyPoints.length;
+  document.getElementById('resultsPanel').classList.add('show');
+
+  document.getElementById('btnDraw').disabled = false;
+  document.getElementById('btnFinish').disabled = true;
+  document.getElementById('btnUndo').disabled = true;
+  setStatus(`Area: ${sqFt.toLocaleString()} sq ft (${acres} acres) — ${polyPoints.length} points`);
+  updateHint('Measurement complete. Add notes if needed, then click <b>Save & Use</b>.');
+  document.getElementById('saveExtras').style.display = 'block';
+}
+
+function redrawPoly() {
+  if (polyShape) { map.removeLayer(polyShape); polyShape = null; }
+  polyPoints = [];
+  document.getElementById('resultsPanel').classList.remove('show');
+  startDraw();
+}
+
+function clearAll() {
+  drawing = false;
+  document.getElementById('app').classList.remove('drawing');
+  map.off('click', onMapClick);
+  polyPoints = [];
+  if (polyLine)  { map.removeLayer(polyLine);  polyLine  = null; }
+  if (polyShape) { map.removeLayer(polyShape); polyShape = null; }
+  if (closeDot)  { map.removeLayer(closeDot);  closeDot  = null; }
+  clickPoints.forEach(d => map.removeLayer(d));
+  clickPoints = [];
+  document.getElementById('btnDraw').disabled    = false;
+  document.getElementById('btnFinish').disabled  = true;
+  document.getElementById('btnUndo').disabled    = true;
+  document.getElementById('btnClear').disabled   = true;
+  document.getElementById('resultsPanel').classList.remove('show');
+  document.getElementById('saveExtras').style.display = 'none';
+  document.getElementById('savedBanner').style.display = 'none';
+  document.getElementById('measureNotes').value = '';
+  setStatus('');
+  updateHint('Enter an address to center the map, then click "Draw Area" and mark the corners of the area to be serviced — yard, driveway, patio, walkway or pavers.');
+}
+
+// ── AREA CALCULATION — Shoelace formula on WGS-84 coords ──────────────────
+// Converts lat/lng polygon to square meters.
+// Uses equirectangular approximation — accurate to ~1% for property-scale polygons.
+function shoelaceM2(pts) {
+  if (pts.length < 3) return 0;
+  const R  = 6378137; // Earth radius meters (WGS-84 semi-major axis)
+  const d2r= Math.PI / 180;
+
+  // Convert to meters relative to centroid (reduces floating point error)
+  const latC = pts.reduce((s,p)=>s+p[0],0) / pts.length;
+  const lngC = pts.reduce((s,p)=>s+p[1],0) / pts.length;
+  const cosLat = Math.cos(latC * d2r);
+
+  const xy = pts.map(p => [
+    (p[1] - lngC) * d2r * R * cosLat,  // x (east, meters)
+    (p[0] - latC) * d2r * R,           // y (north, meters)
+  ]);
+
+  // Shoelace
+  let area = 0;
+  const n  = xy.length;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    area += xy[i][0] * xy[j][1];
+    area -= xy[j][0] * xy[i][1];
+  }
+  return Math.abs(area / 2);
+}
+
+// ── SAVE MEASUREMENT ───────────────────────────────────────────────────────
+async function saveMeasurement() {
+  if (!polyPoints.length || sqFt === 0) {
+    toast('No measurement to save', 'warn');
+    return;
+  }
+
+  const btn = document.getElementById('btnSave');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Saving…';
+
+  const notes   = document.getElementById('measureNotes').value.trim();
+  const payload = {
+    address:      savedAddr || document.getElementById('addrInput').value.trim(),
+    sq_ft:        sqFt,
+    acres:        parseFloat(acres),
+    polygon:      polyPoints,
+    notes:        notes || null,
+    estimate_id:  ESTIMATE_ID || null,
+    property_id:  PROPERTY_ID || null,
+    customer_id:  CUSTOMER_ID || null,
+    measured_at:  new Date().toISOString(),
+  };
+
+  try {
+    const res  = await fetch('api/properties.php?action=save_measurement', {
+      method:'POST', headers:HDR, body:JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (!data.ok) throw new Error(data.error || 'Save failed');
+
+    btn.innerHTML = '✅ Saved!';
+
+    // Notify parent if embedded in iframe
+    if (window.parent !== window || EMBED_MODE) {
+      window.parent.postMessage({
+        type:        'ptpc_measurement',
+        sq_ft:       sqFt,
+        acres:       parseFloat(acres),
+        address:     payload.address,
+        notes:       notes || '',
+        polygon:     polyPoints,
+        property_id: data.property_id,
+        estimate_id: ESTIMATE_ID,
+        customer_id: CUSTOMER_ID,
+      }, '*');
+    }
+
+    // Standalone: show in-page banner instead of window.confirm
+    if (window.parent === window && !EMBED_MODE) {
+      const banner = document.getElementById('savedBanner');
+      banner.style.display = 'flex';
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = '💾 Save & Use';
+      }, 800);
+    }
+
+  } catch(e) {
+    toast('Save failed: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = '💾 Save & Use';
+  }
+}
+
+// If no API, still allow postMessage save (offline/demo mode)
+function saveMeasurementOffline() {
+  if (!polyPoints.length || sqFt === 0) return;
+  const payload = {
+    type:    'ptpc_measurement',
+    sq_ft:   sqFt,
+    acres:   parseFloat(acres),
+    address: savedAddr || document.getElementById('addrInput').value.trim(),
+    polygon: polyPoints,
+  };
+  if (window.parent !== window) {
+    window.parent.postMessage(payload, '*');
+    toast('✅ Measurement sent!', 'success');
+  }
+}
+
+// ── HIDE SAVED BANNER ──────────────────────────────────────────────────────
+function hideSavedBanner() {
+  document.getElementById('savedBanner').style.display = 'none';
+}
+
+// ── CLOSE TOOL ─────────────────────────────────────────────────────────────
+function closeTool() {
+  if (window.parent !== window) {
+    window.parent.postMessage({type:'ptpc_measurement_closed'}, '*');
+  } else {
+    window.close();
+  }
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function setStatus(msg) {
+  const el = document.getElementById('statusBar');
+  if (msg) { el.textContent = msg; el.classList.add('show'); }
+  else el.classList.remove('show');
+}
+
+function updateHint(html) {
+  document.getElementById('drawHint').innerHTML = html;
+}
+
+let toastTimer;
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'show' + (type?' '+type:'');
+  clearTimeout(toastTimer);
+  toastTimer    = setTimeout(() => t.className = '', 3500);
+}
+
+// ── BOOT ───────────────────────────────────────────────────────────────────
+// If address passed in URL, geocode it on load
+if (INIT_ADDR) {
+  document.getElementById('addrInput').value = INIT_ADDR;
+  setTimeout(geocodeAddr, 600);
+} else {
+  // Default to Titusville FL area
+  setStatus('Enter an address above to center the map on the property.');
+}
+
+// Click outside autocomplete to close
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ac-wrap')) hideAC();
+});
+
+// Keyboard shortcut: Escape cancels drawing
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && drawing) {
+    clearAll();
+    toast('Drawing cancelled', '');
+  }
+});
+</script>
+</body>
+</html>

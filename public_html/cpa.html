@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="/js/owner-shell.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Year-End Books — Patriot Total Property Care</title>
+<link rel="stylesheet" href="/assets/fonts.css">
+<style>
+:root{--navy:#1B2A6B;--green:#2D6A2D;--red:#C8102E;--text:#1a1a2e;--muted:#64748b;--border:#e2e8f0;--bg:#f8fafc;--card:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Sans 3',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.45}
+.wrap{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
+h1{font-family:Oswald,sans-serif;color:var(--navy);font-size:1.6rem}
+h2{font-family:Oswald,sans-serif;color:var(--navy);font-size:1.15rem;margin:22px 0 8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sub{color:var(--muted);font-size:.9rem;margin-top:2px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:14px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px}
+.kpi b{display:block;font-size:1.3rem;font-family:Oswald,sans-serif}.kpi span{font-size:.8rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:.86rem}
+th,td{padding:7px 9px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}th{background:#eef2ff;color:var(--navy);font-size:.78rem;text-transform:uppercase}
+td.n{text-align:right;white-space:nowrap}
+.tw{overflow-x:auto}
+.btn{border:1px solid var(--navy);background:#fff;color:var(--navy);border-radius:7px;padding:5px 10px;font:inherit;font-size:.8rem;font-weight:700;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.rc{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:.78rem;color:inherit;text-decoration:none}
+.rc img{width:100%;height:150px;object-fit:cover;display:block;background:#eee}.rc div{padding:6px}
+.note{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:.84rem;margin-top:12px}
+.err{background:#fef2f2;border:1px solid #fecaca;color:var(--red);border-radius:8px;padding:14px;margin-top:20px}
+@media print{.btn,.noprint{display:none!important}.rc img{height:110px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><p>Loading…</p></div>
+<script>
+'use strict';
+// The CPA's read-only view of one tax year (owner 2026-11-15: "beable send to cpa at end year").
+// ?t=… = the private link emailed to the CPA (30 days). ?year=… = the owner's own preview (needs the owner signed in).
+const q = new URLSearchParams(location.search), T = q.get('t') || '', YEAR = q.get('year') || '';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => '$' + Number(n || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+let D = null;
+const csvCell = v => { v = String(v ?? ''); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+function download(name, head, rows) {
+  const csv = [head.join(',')].concat(rows.map(r => r.map(csvCell).join(','))).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'})); a.download = name; a.click();
+}
+const rcptUrl = id => 'api/bk-extra.php?action=receipt_file&id=' + encodeURIComponent(id) + (T ? '&t=' + encodeURIComponent(T) : '');
+function dl(kind) {
+  const y = D.year;
+  if (kind === 'income') download(`PTPC-${y}-income.csv`, ['date','description','category','client','amount','sales tax collected','notes'], D.income.map(r => [r.date, r.description, r.category, r.client || r.customer || '', r.amount, r.tax_collected || 0, r.notes || '']));
+  if (kind === 'expenses') download(`PTPC-${y}-expenses.csv`, ['date','description','category','schedule C line','schedule C label','vendor','amount','deductible','receipt photo','notes'],
+    D.expenses.map(r => [r.date, r.description, r.category, r.sch_c_line, r.sch_c_label, r.vendor || '', r.amount, r.deductible === false ? 'no' : 'yes', String(r.receipt_ref || '').indexOf('rcpt:') === 0 ? 'yes' : (r.receipt_ref || ''), r.notes || '']));
+  if (kind === 'mileage') download(`PTPC-${y}-mileage.csv`, ['date','miles','where / why','vehicle / crew','recorded by'], D.mileage.map(m => [m.date, m.miles, m.purpose || '', m.vehicle || '', m.source || '']));
+  if (kind === 'schc') download(`PTPC-${y}-schedule-c.csv`, ['schedule C line','amount'], Object.entries(D.schedule_c));
+  if (kind === 'ctr') download(`PTPC-${y}-1099-contractors.csv`, ['contractor','paid in ' + y,'W-9 on file'], D.contractors.map(c => [c.name, c.total, c.w9 ? 'yes' : 'NO']));
+}
+function render() {
+  const t = D.totals;
+  document.getElementById('app').innerHTML = `
+    <h1>${esc(D.business)} — ${esc(D.year)} books</h1>
+    <div class="sub">${T ? 'Private read-only link · works until ' + esc(D.expires) : 'Owner preview — this is what your CPA sees'} · <button class="btn noprint" onclick="print()">🖨 Print / Save PDF</button></div>
+    ${T ? '' : `<div class="noprint" style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:12px;margin-top:12px">
+      <b>Review it, then send.</b> Look through everything below — delete any bad receipt photos (🗑) — then send it to your CPA.
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
+        <input type="text" id="cpaN" placeholder="CPA name" style="padding:7px;border:1px solid #c7d2fe;border-radius:7px">
+        <input type="email" id="cpaE" placeholder="CPA email" style="padding:7px;border:1px solid #c7d2fe;border-radius:7px;min-width:220px">
+        <button class="btn" style="background:#2D6A2D;color:#fff;border-color:#2D6A2D" onclick="sendIt()">✅ Looks good — send to my CPA</button>
+      </div><div id="sendRes" style="margin-top:6px;font-size:.88rem"></div></div>`}
+    <div class="kpis">
+      <div class="kpi"><b style="color:var(--green)">${money(t.income)}</b><span>Income (gross receipts)</span></div>
+      <div class="kpi"><b style="color:var(--red)">${money(t.expenses)}</b><span>Business expenses</span></div>
+      <div class="kpi"><b>${money(t.net_before_mileage)}</b><span>Net before mileage</span></div>
+      <div class="kpi"><b>${Number(t.miles).toFixed(1)} mi</b><span>× $${Number(t.mileage_rate).toFixed(3)} = ${money(t.mileage_deduction)} mileage</span></div>
+    </div>
+    <div class="note">${esc(D.note)}</div>
+    <h2>Schedule C — expenses by line <button class="btn noprint" onclick="dl('schc')">⬇ CSV</button></h2>
+    <div class="tw"><table><tr><th>Line</th><th class="n">Amount</th></tr>${Object.entries(D.schedule_c).map(([k, v]) => `<tr><td>${esc(k)}</td><td class="n">${money(v)}</td></tr>`).join('') || '<tr><td colspan="2">No expenses.</td></tr>'}</table></div>
+    <h2>Income (${D.income.length}) <button class="btn noprint" onclick="dl('income')">⬇ CSV</button></h2>
+    <div class="tw"><table><tr><th>Date</th><th>Description</th><th>Category</th><th class="n">Amount</th></tr>${D.income.map(r => `<tr><td>${esc(r.date)}</td><td>${esc(r.description)}</td><td>${esc(r.category)}</td><td class="n">${money(r.amount)}</td></tr>`).join('') || '<tr><td colspan="4">None.</td></tr>'}</table></div>
+    <h2>Expenses (${D.expenses.length}) <button class="btn noprint" onclick="dl('expenses')">⬇ CSV</button></h2>
+    <div class="tw"><table><tr><th>Date</th><th>Description</th><th>Sch C</th><th>Vendor</th><th class="n">Amount</th><th>Receipt</th></tr>${D.expenses.map(r => `<tr><td>${esc(r.date)}</td><td>${esc(r.description)}</td><td>${esc(r.sch_c_line)} ${esc(r.sch_c_label)}</td><td>${esc(r.vendor || '')}</td><td class="n">${money(r.amount)}</td><td>${String(r.receipt_ref || '').indexOf('rcpt:') === 0 ? `<a href="${rcptUrl(r.receipt_ref.slice(5))}" target="_blank" rel="noopener">📷</a>` : esc(r.receipt_ref || '')}</td></tr>`).join('') || '<tr><td colspan="6">None.</td></tr>'}</table></div>
+    <h2>Mileage log (${D.mileage.length} days · ${Number(t.miles).toFixed(1)} mi) <button class="btn noprint" onclick="dl('mileage')">⬇ CSV</button></h2>
+    <div class="tw"><table><tr><th>Date</th><th class="n">Miles</th><th>Where / why</th><th>Vehicle / crew</th><th>Recorded by</th></tr>${D.mileage.map(m => `<tr><td>${esc(m.date)}</td><td class="n">${Number(m.miles).toFixed(1)}</td><td>${esc(m.purpose || '')}</td><td>${esc(m.vehicle || '')}</td><td>${esc({gps: 'crew phone GPS', route: 'planned route', typed: 'typed'}[m.source] || m.source || '')}</td></tr>`).join('') || '<tr><td colspan="5">None.</td></tr>'}</table></div>
+    <h2>1099 contractors (${D.contractors.length}) <button class="btn noprint" onclick="dl('ctr')">⬇ CSV</button></h2>
+    <div class="tw"><table><tr><th>Contractor</th><th class="n">Paid in ${esc(D.year)}</th><th>W-9 on file</th></tr>${D.contractors.map(c => `<tr><td>${esc(c.name)}</td><td class="n">${money(c.total)}</td><td>${c.w9 ? 'yes' : '<b style="color:var(--red)">NO</b>'}</td></tr>`).join('') || '<tr><td colspan="3">None paid this year.</td></tr>'}</table></div>
+    <h2>Receipt photos (${D.receipts.length})</h2>
+    <div class="grid">${D.receipts.map(r => `<a class="rc" href="${rcptUrl(r.id)}" target="_blank" rel="noopener"><img loading="lazy" src="${rcptUrl(r.id)}" alt="Receipt ${esc(r.vendor || '')}"><div><b>${esc(r.vendor || 'Receipt')}</b><br>${esc(r.date)} · ${r.total != null ? money(r.total) : ''}${T ? '' : ` <button class="btn noprint" style="color:#C8102E;border-color:#C8102E;padding:1px 6px" title="Delete this photo (bad shot)" onclick="event.preventDefault();delPhoto('${esc(r.id)}')">🗑</button>`}</div></a>`).join('') || '<p class="sub">No receipt photos for this year.</p>'}</div>`;
+}
+// ── owner preview only: delete a bad photo, and send once it looks right ──
+const H = {'X-Requested-With': 'ptpc', 'Content-Type': 'application/json'};
+async function delPhoto(id) {
+  if (!confirm('Delete this receipt photo? (Use it for blurry or wrong shots — the expense itself stays.)')) return;
+  const r = await fetch('api/bk-extra.php?action=receipt_delete', {method: 'POST', credentials: 'same-origin', headers: H, body: JSON.stringify({id})}).then(x => x.json()).catch(() => null);
+  if (!r || !r.ok) { alert('NOT deleted: ' + ((r && r.error) || 'no connection')); return; }
+  load();
+}
+async function sendIt() {
+  const name = document.getElementById('cpaN').value.trim(), email = document.getElementById('cpaE').value.trim(), res = document.getElementById('sendRes');
+  if (!email) { res.innerHTML = '<span style="color:#C8102E">Type your CPA\'s email.</span>'; return; }
+  if (!confirm('Send your ' + D.year + ' books to ' + email + '? They get a private read-only link that works 30 days.')) return;
+  await fetch('api/bk-extra.php?action=settings', {method: 'POST', credentials: 'same-origin', headers: H, body: JSON.stringify({cpa_name: name, cpa_email: email})}).catch(() => null);
+  const r = await fetch('api/bk-extra.php?action=cpa_send', {method: 'POST', credentials: 'same-origin', headers: H, body: JSON.stringify({year: D.year, email})}).then(x => x.json()).catch(() => null);
+  if (!r || !r.ok) { res.innerHTML = '<span style="color:#C8102E">NOT sent: ' + esc((r && r.error) || 'no connection') + '</span>'; return; }
+  res.innerHTML = (r.emailed ? '✅ Sent to ' + esc(r.email) : '⚠️ The email did not go out — copy the link below and send it yourself') + ' · works until ' + esc(r.expires)
+    + '<br><input readonly style="width:100%;margin-top:6px;font-size:.78rem" value="' + esc(r.link) + '" onclick="this.select()"><br><small>It is also listed in Bookkeeping → CPA Reports → Links you\'ve sent.</small>';
+}
+async function load() {
+  const url = T ? 'api/bk-extra.php?action=cpa_view&t=' + encodeURIComponent(T) : 'api/bk-extra.php?action=package&year=' + encodeURIComponent(YEAR || new Date().getFullYear());
+  let r = null;
+  try { r = await fetch(url, {credentials: 'same-origin', headers: {'X-Requested-With': 'ptpc'}}).then(x => x.json()); } catch (e) {}
+  if (!r || !r.ok) { document.getElementById('app').innerHTML = '<h1>Year-End Books</h1><div class="err">' + esc((r && r.error) || 'Could not load — check your connection and try again.') + '</div>'; return; }
+  D = r; render();
+  if (!T) fetch('api/bk-extra.php?action=settings', {credentials: 'same-origin', headers: H}).then(x => x.json()).then(s => {
+    if (s && s.ok) { document.getElementById('cpaN').value = s.settings.cpa_name || ''; document.getElementById('cpaE').value = s.settings.cpa_email || ''; } }).catch(() => {});
+}
+load();
+</script>
+</body>
+</html>

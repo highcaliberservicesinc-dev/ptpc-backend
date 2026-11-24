@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="/js/owner-shell.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Contractors — PTPC</title>
+<link rel="stylesheet" href="/assets/fonts.css">
+<style>
+:root{--navy:#1B2A6B;--red:#C8102E;--green:#166534;--amber:#B45309;--bg:#f4f6fb;--card:#fff;--border:#e2e8f0;--muted:#64748b;--text:#0f172a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Source Sans 3',system-ui,sans-serif;font-size:16px}
+header{background:var(--navy);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px}
+header a{color:#fff;text-decoration:none;opacity:.85;font-size:.9rem}
+header h1{font-family:Oswald,sans-serif;font-size:1.35rem;margin:0}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:14px}
+.tabs button{flex:1 1 auto;min-width:70px;border:0;background:none;padding:10px 6px;border-radius:7px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}
+.tabs button.on{background:var(--navy);color:#fff}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.bar .grow{flex:1}
+.btn{border:2px solid var(--navy);background:#fff;color:var(--navy);border-radius:8px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.primary{background:var(--navy);color:#fff}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.sm{padding:5px 10px;font-size:.85rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.card h3{margin:0 0 2px;font-size:1.05rem}
+.muted{color:var(--muted);font-size:.88rem}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
+.chip{background:#eef2ff;color:#3730a3;border-radius:14px;padding:3px 9px;font-size:.78rem}
+.warn{background:#fff7ed;color:var(--amber);border-radius:6px;padding:3px 8px;font-size:.8rem;font-weight:600;display:inline-block;margin:2px 4px 2px 0}
+.warn.bad{background:#fef2f2;color:var(--red)}
+.ok{color:var(--green);font-weight:600;font-size:.85rem}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.archived{opacity:.55}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:.92rem}
+th,td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:#f8fafc;font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+td.num,th.num{text-align:right}
+.empty{background:#fff;border:1px dashed #cbd5e1;border-radius:10px;padding:22px;text-align:center;color:var(--muted)}
+.note{background:#f8fafc;border-left:4px solid var(--navy);border-radius:8px;padding:10px 12px;font-size:.88rem;margin-bottom:12px}
+dialog{border:0;border-radius:14px;padding:0;width:min(560px,94vw);max-height:92vh}
+dialog::backdrop{background:rgba(15,23,42,.45)}
+.dlg{padding:16px 18px}
+.dlg h2{margin:0 0 10px;font-size:1.15rem}
+label{display:block;font-weight:600;font-size:.85rem;margin:10px 0 4px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.svcs{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:.88rem}
+.svcs label,.check label{font-weight:400;margin:0;display:flex;gap:6px;align-items:center}
+.svcs input,.check input{width:auto}
+.dlg-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--border);position:sticky;bottom:0;background:#fff}
+.msg{display:none;margin-bottom:10px;padding:10px 12px;border-radius:8px;font-size:.9rem}
+.msg.show{display:block}.msg.err{background:#fef2f2;color:var(--red)}.msg.good{background:#f0fdf4;color:var(--green)}
+.tab-n[hidden]{display:none}
+.tab-n{display:inline-block;background:var(--red);color:#fff;border-radius:9px;padding:0 6px;font-size:.75rem;margin-left:4px}
+.job{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.job h4{margin:0 0 2px;font-size:1rem}
+.grp{font-family:Oswald,sans-serif;font-size:1.05rem;margin:16px 0 8px;color:var(--navy)}
+.inv{display:inline-block;border-radius:12px;padding:2px 8px;font-size:.78rem;margin:3px 4px 0 0;background:#f1f5f9;color:#334155}
+.inv.yes{background:#dcfce7;color:#166534}.inv.no{background:#fef2f2;color:#991b1b}
+.payrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.payrow input,.payrow select{width:auto;flex:1 1 110px;padding:7px}
+.btn.green{background:#166534;border-color:#166534;color:#fff}
+@media (max-width:560px){.two,.svcs{grid-template-columns:1fr}.hide-sm{display:none}
+  /* tables become one card per row on phones (no sideways scrolling) */
+  table.resp,table.resp tbody,table.resp tfoot,table.resp tr,table.resp td,table.resp th{display:block;width:100%}
+  table.resp thead{display:none}
+  table.resp tr{border-bottom:1px solid var(--border);padding:8px 4px}
+  table.resp td,table.resp tfoot th{border:0;padding:3px 8px;display:flex;justify-content:space-between;gap:10px;text-align:right}
+  table.resp td::before,table.resp tfoot th::before{content:attr(data-l);color:var(--muted);font-weight:600;text-align:left}
+  table.resp td.hide-sm{display:none}
+  table.resp tfoot th{background:#f8fafc;font-size:.95rem;text-transform:none;letter-spacing:0;color:var(--text)}
+  table.resp tfoot th:empty{display:none}}
+@media print{header,.tabs,.bar,.no-print,#ptpc-menu-btn,#ptpc-alerts-bell{display:none!important}body{background:#fff}}
+</style>
+</head>
+<body>
+<header><h1>🤝 Contractors</h1></header>
+<div class="wrap">
+  <div class="msg" id="msg"></div>
+  <div class="tabs" role="tablist">
+    <button type="button" class="on" data-tab="list">Contractors</button>
+    <button type="button" data-tab="jobs">📋 Jobs<span class="tab-n" id="billN" hidden></span></button>
+    <button type="button" data-tab="pay">Payments</button>
+    <button type="button" data-tab="report">1099 Report</button>
+  </div>
+
+  <!-- CONTRACTORS -->
+  <section id="tab-list">
+    <div class="note" id="billBanner" hidden style="border-left-color:var(--amber)"></div>
+    <div class="bar">
+      <input class="grow" type="search" id="q" placeholder="Search name, company or service…" aria-label="Search contractors">
+      <select id="catFilter" style="width:auto" aria-label="Show category"><option value="">All categories</option></select>
+      <button class="btn primary" type="button" onclick="editContractor()">+ Add contractor</button>
+    </div>
+    <label class="muted check" style="font-weight:400;margin:0 0 10px"><input type="checkbox" id="showArchived"> Show archived contractors</label>
+    <div id="list"></div>
+  </section>
+
+  <!-- JOBS (offers sent from an estimate: answers, signed, bills to pay, paid) -->
+  <section id="tab-jobs" hidden>
+    <div class="note">Every job you offered to contractors (from an estimate → <strong>🤝 Offer to contractors</strong>). Pick who gets it, see who signed, and mark their bill paid right here. Paying is something <strong>you</strong> do (check, Zelle…); marking it paid records it in Payments, Bookkeeping and the 1099 report.</div>
+    <div id="jobsList"></div>
+  </section>
+
+  <!-- PAYMENTS -->
+  <section id="tab-pay" hidden>
+    <div class="note">Record each payment <strong>you made</strong> to a contractor (check, cash, Zelle…). This is your record for 1099s — the system never sends money.</div>
+    <div class="bar">
+      <label for="payYear" style="margin:0">Year</label><select id="payYear" style="width:auto"></select>
+      <span class="grow"></span>
+      <button class="btn primary" type="button" onclick="openPay()">+ Record payment</button>
+    </div>
+    <div id="payList"></div>
+  </section>
+
+  <!-- 1099 REPORT -->
+  <section id="tab-report" hidden>
+    <div class="note">Total you paid each contractor in the year. <strong id="thrNote"></strong> Give the spreadsheet to your accountant — the official 1099-NEC needs the contractor's tax ID from their W-9, so your accountant files it. The printable copy is a payment summary you can send each contractor.</div>
+    <div class="bar">
+      <label for="repYear" style="margin:0">Year</label><select id="repYear" style="width:auto"></select>
+      <span class="grow"></span>
+      <a class="btn" id="csvLink" href="#">⬇ Spreadsheet for accountant</a>
+    </div>
+    <div id="report"></div>
+  </section>
+</div>
+
+<!-- Add / edit contractor -->
+<dialog id="dlgC"><form method="dialog" id="formC">
+  <div class="dlg">
+    <h2 id="dlgCTitle">Add contractor</h2>
+    <input type="hidden" id="cId">
+    <div class="two">
+      <div><label for="cName">Name *</label><input id="cName" maxlength="100" required></div>
+      <div><label for="cCompany">Company</label><input id="cCompany" maxlength="120"></div>
+      <div><label for="cCat">Category *</label><select id="cCat"></select></div>
+      <div></div>
+      <div><label for="cPhone">Phone</label><input id="cPhone" type="tel" maxlength="30"></div>
+      <div><label for="cEmail">Email</label><input id="cEmail" type="email" maxlength="190"></div>
+    </div>
+    <label for="cAddr">Mailing address (for their 1099 copy)</label><input id="cAddr" maxlength="250">
+    <label>Services they do</label><div class="svcs" id="cSvcs"></div>
+    <div class="two">
+      <div><label for="cLic">License number</label><input id="cLic" maxlength="60"></div>
+      <div><label for="cLicExp">License expires</label><input id="cLicExp" type="date"></div>
+      <div><label for="cIns">Insurance company</label><input id="cIns" maxlength="120"></div>
+      <div><label for="cPol">Policy number</label><input id="cPol" maxlength="60"></div>
+      <div><label for="cInsExp">Insurance expires</label><input id="cInsExp" type="date"></div>
+      <div><label for="cW9Date">W-9 received on</label><input id="cW9Date" type="date"></div>
+    </div>
+    <div class="check" style="margin-top:10px"><label><input type="checkbox" id="cW9"> W-9 received (keep the form itself on paper — never type their SSN or EIN here)</label></div>
+    <label for="cNotes">Notes</label><textarea id="cNotes" rows="2" maxlength="1000"></textarea>
+  </div>
+  <div class="dlg-foot"><button class="btn" value="cancel" type="button" onclick="dlgC.close()">Cancel</button><button class="btn primary" type="button" onclick="saveContractor()">Save</button></div>
+</form></dialog>
+
+<!-- Record payment -->
+<dialog id="dlgP"><form method="dialog">
+  <div class="dlg">
+    <h2>Record a payment you made</h2>
+    <label for="pWho">Contractor *</label><select id="pWho"></select>
+    <div class="two">
+      <div><label for="pDate">Date paid *</label><input id="pDate" type="date"></div>
+      <div><label for="pAmt">Amount ($) *</label><input id="pAmt" type="number" min="0.01" step="0.01" inputmode="decimal"></div>
+      <div><label for="pMethod">How you paid</label><select id="pMethod"></select></div>
+      <div><label for="pJob">Job</label><input id="pJob" maxlength="160" list="jobOpts" autocomplete="off" placeholder="Pick from the list or type it"><datalist id="jobOpts"></datalist></div>
+    </div>
+    <label for="pNote">Note</label><input id="pNote" maxlength="500" placeholder="e.g. check #1042">
+  </div>
+  <div class="dlg-foot"><button class="btn" type="button" onclick="dlgP.close()">Cancel</button><button class="btn primary" type="button" onclick="savePay()">Save payment</button></div>
+</form></dialog>
+
+<script>
+const API = '/api/contractors.php', H = {'X-Requested-With':'ptpc','Content-Type':'application/json'};
+let contractors = [], services = [], categories = [], methods = [], threshold = 2000, thisYear = String(new Date().getFullYear());
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => '$' + Number(n || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+const METHOD = {check:'Check', cash:'Cash', zelle:'Zelle', ach:'Bank transfer', card:'Card', paypal:'PayPal', other:'Other'};
+const niceDate = d => /^\d{4}-\d{2}-\d{2}/.test(d || '') ? new Date(d.slice(0,10) + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : (d || '');
+function say(text, good){ const m = $('msg'); m.textContent = text; m.className = 'msg show ' + (good ? 'good' : 'err'); if (good) setTimeout(() => m.className = 'msg', 3500); window.scrollTo({top:0, behavior:'smooth'}); }
+async function api(action, body, qs){
+  const opt = body ? {method:'POST', headers:H, body:JSON.stringify(body)} : {headers:H, cache:'no-store'};
+  try { const r = await fetch(API + '?action=' + action + (qs || ''), opt); const d = await r.json().catch(() => null);
+    if (r.status === 401) { location.replace('dashboard.html'); return null; }
+    if (!d || !d.ok) { say((d && d.error) || 'Something went wrong — nothing was saved.'); return null; } return d;
+  } catch (e) { say('Could not reach the server. Check your connection and try again.'); return null; }
+}
+
+// ── tabs ──
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  ['list','jobs','pay','report'].forEach(t => $('tab-' + t).hidden = t !== b.dataset.tab);
+  if (b.dataset.tab === 'jobs') loadJobs();
+  if (b.dataset.tab === 'pay') loadPayments();
+  if (b.dataset.tab === 'report') loadReport();
+}));
+function fillYears(){
+  const ys = []; for (let y = +thisYear; y >= +thisYear - 5; y--) ys.push(`<option>${y}</option>`);
+  $('payYear').innerHTML = $('repYear').innerHTML = ys.join('');
+}
+$('payYear').addEventListener('change', loadPayments);
+$('repYear').addEventListener('change', loadReport);
+
+// ── contractors ──
+async function loadContractors(){
+  const d = await api('list'); if (!d) return;
+  contractors = d.contractors; services = d.services; categories = d.categories || []; methods = d.methods; threshold = d.threshold; thisYear = d.year;
+  if (!$('payYear').options.length) fillYears();
+  if ($('catFilter').options.length < 2) $('catFilter').innerHTML += categories.map(c => `<option>${esc(c)}</option>`).join('');
+  renderList();
+}
+function renderList(){
+  const q = $('q').value.trim().toLowerCase(), showArch = $('showArchived').checked, cat = $('catFilter').value;
+  const rows = contractors.filter(c => (showArch || c.active !== false) && (!cat || c.category === cat) &&
+    (!q || [c.name, c.company, (c.services || []).join(' ')].join(' ').toLowerCase().includes(q)));
+  if (!rows.length) { $('list').innerHTML = `<div class="empty">${contractors.length ? 'No contractors match.' : 'No contractors yet. Press <strong>+ Add contractor</strong> to put your first one on file.'}</div>`; return; }
+  $('list').innerHTML = rows.map(c => `
+    <div class="card ${c.active === false ? 'archived' : ''}">
+      <div class="row">
+        <div><h3>${esc(c.name)} <span class="chip" style="background:#fef3c7;color:#92400e">${esc(c.category || 'Other')}</span>${c.active === false ? ' <span class="muted">(archived)</span>' : ''}</h3>
+          <div class="muted">${esc(c.company || '')}${c.company && (c.phone || c.email) ? ' · ' : ''}${c.phone ? `<a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>` : ''}${c.phone && c.email ? ' · ' : ''}${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ''}</div></div>
+        <div class="muted" style="text-align:right">Paid ${esc(thisYear)}<br><strong style="color:var(--text);font-size:1rem">${money(c.paid_this_year)}</strong></div>
+      </div>
+      ${(c.services || []).length ? `<div class="chips">${c.services.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>` : ''}
+      <div>${(c.warnings || []).length ? c.warnings.map(w => `<span class="warn ${/EXPIRED|not received|needed before/.test(w) ? 'bad' : ''}">⚠ ${esc(w.replace(/\d{4}-\d{2}-\d{2}/g, niceDate))}</span>`).join('') : '<span class="ok">✔ License, insurance and W-9 on file</span>'}</div>
+      <div class="actions">
+        <button class="btn sm" type="button" onclick="editContractor('${esc(c.id)}')">Edit</button>
+        <button class="btn sm" type="button" onclick="openPay('${esc(c.id)}')">+ Payment</button>
+        <button class="btn sm ${c.active === false ? '' : 'danger'}" type="button" onclick="archive('${esc(c.id)}', ${c.active === false})">${c.active === false ? 'Bring back' : 'Archive'}</button>
+        ${c.has_payments ? '' : `<button class="btn sm danger" type="button" onclick="removeContractor('${esc(c.id)}')">Delete</button>`}
+      </div>
+    </div>`).join('');
+}
+$('q').addEventListener('input', renderList);
+$('catFilter').addEventListener('change', renderList);
+async function removeContractor(id){
+  const c = contractors.find(x => x.id === id); if (!c) return;
+  if (!confirm(`Delete ${c.name} for good? Only for someone added by mistake — anyone you have paid can only be archived.`)) return;
+  if (await api('delete', {id})) { say('Deleted.', true); loadContractors(); }
+}
+$('showArchived').addEventListener('change', renderList);
+
+const dlgC = $('dlgC'), dlgP = $('dlgP');
+function editContractor(id){
+  const c = contractors.find(x => x.id === id) || {};
+  $('dlgCTitle').textContent = id ? 'Edit contractor' : 'Add contractor';
+  $('cId').value = c.id || '';
+  [['cName','name'],['cCompany','company'],['cPhone','phone'],['cEmail','email'],['cAddr','mailing_address'],['cLic','license_no'],
+   ['cLicExp','license_exp'],['cIns','ins_company'],['cPol','ins_policy'],['cInsExp','ins_exp'],['cW9Date','w9_date'],['cNotes','notes']]
+    .forEach(([el, k]) => $(el).value = c[k] || '');
+  $('cW9').checked = !!c.w9_received;
+  $('cCat').innerHTML = categories.map(k => `<option ${k === (c.category || 'Handyman') ? 'selected' : ''}>${esc(k)}</option>`).join('');
+  $('cSvcs').innerHTML = services.map(s => `<label><input type="checkbox" value="${esc(s)}" ${(c.services || []).includes(s) ? 'checked' : ''}> ${esc(s)}</label>`).join('');
+  dlgC.showModal();
+}
+async function saveContractor(){
+  const v = id => $(id).value.trim();
+  if (v('cName').length < 2) { $('cName').focus(); return; }
+  const contractor = { id: v('cId'), name: v('cName'), company: v('cCompany'), category: $('cCat').value, phone: v('cPhone'), email: v('cEmail'),
+    mailing_address: v('cAddr'), license_no: v('cLic'), license_exp: v('cLicExp'), ins_company: v('cIns'), ins_policy: v('cPol'),
+    ins_exp: v('cInsExp'), w9_received: $('cW9').checked, w9_date: v('cW9Date'), notes: v('cNotes'),
+    services: [...$('cSvcs').querySelectorAll('input:checked')].map(i => i.value) };
+  const d = await api('save', {contractor}); if (!d) { dlgC.close(); return; }
+  dlgC.close(); say('Saved ' + contractor.name + '.', true); loadContractors();
+}
+async function archive(id, bringBack){
+  const c = contractors.find(x => x.id === id); if (!c) return;
+  if (!bringBack && !confirm(`Archive ${c.name}? They're hidden from your list but their payment history stays for 1099s.`)) return;
+  if (await api('archive', {id, active: bringBack})) { say(bringBack ? 'Brought back.' : 'Archived.', true); loadContractors(); }
+}
+
+// ── payments ──
+function openPay(id){
+  const act = contractors.filter(c => c.active !== false);
+  if (!act.length) { say('Add a contractor first.'); return; }
+  $('pWho').innerHTML = act.map(c => `<option value="${esc(c.id)}" ${c.id === id ? 'selected' : ''}>${esc(c.name)}${c.company ? ' — ' + esc(c.company) : ''}</option>`).join('');
+  $('pMethod').innerHTML = methods.map(m => `<option value="${m}">${METHOD[m] || m}</option>`).join('');
+  $('pDate').value = new Date().toLocaleDateString('en-CA', {timeZone:'America/New_York'});
+  $('pAmt').value = ''; $('pJob').value = ''; $('pNote').value = '';
+  fillJobOpts();
+  dlgP.showModal();
+}
+let jobOpts = [];          // [{label, id}] — id only for real jobs (saved as job_id); typing your own text still works
+async function fillJobOpts(){
+  if (!jobOpts.length) {
+    try {
+      const d = await fetch('/api/jobs.php?action=list', {headers:H, cache:'no-store'}).then(r => r.json());
+      const jobs = ((d && d.jobs) || []).filter(j => !/cancel/i.test(j.status || '')).slice(0, 300);
+      jobOpts = jobs.map(j => ({id: String(j.id), label: [j.customer_name || j.customer || 'Customer', j.service || j.service_type || 'Job', niceDate(j.scheduled_date || j.date)].filter(Boolean).join(' — ')}));
+    } catch (e) { jobOpts = []; }
+    (offers || []).forEach(o => { const l = (o.service || 'Job') + ' — ' + ((o.customer && o.customer.name) || '') + ' (' + (o.town || '') + ')'; if (!jobOpts.some(x => x.label === l)) jobOpts.push({id: '', label: l}); });
+  }
+  $('jobOpts').innerHTML = jobOpts.map(o => `<option value="${esc(o.label)}"></option>`).join('');
+}
+async function savePay(){
+  const amount = parseFloat($('pAmt').value);
+  if (!(amount > 0)) { $('pAmt').focus(); return; }
+  const jobText = $('pJob').value.trim(), picked = jobOpts.find(o => o.label === jobText);
+  const d = await api('pay_add', {contractor_id: $('pWho').value, date: $('pDate').value, amount, method: $('pMethod').value, job: jobText, job_id: picked ? picked.id : '', note: $('pNote').value.trim()});
+  dlgP.close(); if (!d) return;
+  say('Payment of ' + money(amount) + ' recorded — also added to Bookkeeping as Contract Labor.', true); loadContractors();
+  if (!$('tab-pay').hidden) loadPayments();
+}
+async function loadPayments(){
+  const d = await api('payments', null, '&year=' + $('payYear').value); if (!d) return;
+  if (!d.payments.length) { $('payList').innerHTML = '<div class="empty">No payments recorded for ' + esc($('payYear').value) + '.</div>'; return; }
+  const total = d.payments.reduce((s, p) => s + Number(p.amount), 0);
+  $('payList').innerHTML = `<table class="resp"><thead><tr><th>Date</th><th>Contractor</th><th class="hide-sm">Job / note</th><th>How</th><th class="num">Amount</th><th></th></tr></thead><tbody>` +
+    d.payments.map(p => `<tr><td data-l="Date">${esc(niceDate(p.date))}</td><td data-l="Contractor">${esc(p.contractor_name)}</td><td data-l="Job" class="${p.job || p.note ? '' : 'hide-sm'}">${esc(p.job)}${p.job && p.note ? ' — ' : ''}${esc(p.note)}</td><td data-l="How">${esc(METHOD[p.method] || p.method)}</td><td data-l="Amount" class="num"><strong>${money(p.amount)}</strong></td>
+      <td data-l=""><button class="btn sm danger" type="button" onclick="delPay('${esc(p.id)}')" aria-label="Remove this payment">✕ Remove</button></td></tr>`).join('') +
+    `</tbody><tfoot><tr><th colspan="4" data-l="Total ${esc($('payYear').value)}"><span class="hide-sm">Total ${esc($('payYear').value)}</span></th><th class="num">${money(total)}</th><th></th></tr></tfoot></table>`;
+}
+async function delPay(id){
+  if (!confirm('Remove this payment entry? Only do this if it was entered by mistake.')) return;
+  if (await api('pay_delete', {id})) { say('Payment removed.', true); loadPayments(); loadContractors(); }
+}
+
+// ── 📋 jobs offered to contractors (#153) ──
+const OFF = '/api/contractor-offers.php';
+let offers = [];
+async function offApi(action, body){
+  try {
+    const r = await fetch(OFF + '?action=' + action, body ? {method:'POST', headers:H, body:JSON.stringify(body)} : {headers:H, cache:'no-store'});
+    if (r.status === 401) { location.replace('dashboard.html'); return null; }
+    const d = await r.json().catch(() => null);
+    if (!d || !d.ok) { say((d && d.error) || 'Something went wrong — nothing was saved.'); return null; } return d;
+  } catch (e) { say('Could not reach the server. Check your connection and try again.'); return null; }
+}
+function openJobsTab(){ document.querySelector('[data-tab=jobs]').click(); }
+async function loadOffers(){
+  const d = await offApi('list'); offers = d ? (d.offers || []) : [];
+  const n = offers.filter(o => o.status === 'signed' && o.bill && !o.paid).length;
+  $('billN').textContent = n; $('billN').hidden = !n;
+  $('billBanner').hidden = !n; $('billBanner').innerHTML = n ? '🧾 <strong>' + n + ' contractor bill' + (n > 1 ? 's' : '') + ' to pay.</strong> <button class="btn sm" type="button" onclick="openJobsTab()">Open 📋 Jobs</button>' : '';
+  return offers;
+}
+async function loadJobs(){
+  await loadOffers();
+  const live = offers.filter(o => o.status !== 'cancelled');
+  if (!live.length) { $('jobsList').innerHTML = '<div class="empty">No jobs offered to contractors yet. Open an estimate and press <strong>🤝 Offer to contractors</strong>.</div>'; return; }
+  const groups = [
+    ['🧾 Bills to pay', live.filter(o => o.status === 'signed' && o.bill && !o.paid)],
+    ['✍️ Picked — waiting for them to sign', live.filter(o => o.status === 'chosen')],
+    ['📨 Waiting for answers', live.filter(o => o.status === 'open')],
+    ['🔨 Signed — waiting for their bill', live.filter(o => o.status === 'signed' && !o.bill && !o.paid)],
+    ['💵 Paid', live.filter(o => o.paid).slice(0, 30)],
+  ];
+  $('jobsList').innerHTML = groups.filter(g => g[1].length).map(([t, list]) => `<div class="grp">${t} (${list.length})</div>` + list.map(jobCard).join('')).join('');
+}
+function jobCard(o){
+  const inv = Object.entries(o.invites || {});
+  const chosen = o.chosen && o.invites && o.invites[o.chosen] ? o.invites[o.chosen].name : '';
+  const answers = inv.map(([cid, i]) => {
+    const st = i.status === 'interested' ? ['yes', '👍 wants it'] : i.status === 'declined' ? ['no', '👎 no thanks'] : ['', '⏳ no answer'];
+    const pick = o.status === 'open' && i.status === 'interested' ? ` <button class="btn sm" type="button" onclick="pickOffer('${esc(o.id)}','${esc(cid)}')">✅ Pick</button>` : '';
+    return `<span class="inv ${st[0]}">${esc(i.name)}: ${st[1]}</span>${pick}`;
+  }).join(' ');
+  const head = `<h4>${esc(o.service || 'Job')} · ${esc((o.customer && o.customer.name) || 'Customer')}</h4>
+    <div class="muted">${esc(o.town || '')} · offered ${esc(niceDate(new Date(o.created || 0).toLocaleDateString('en-CA')))} · pays <strong>${money(o.pay)}</strong>${o.timing ? ' · ' + esc(o.timing) : ''}</div>`;
+  let body = '';
+  if (o.paid) body = `<div class="ok" style="margin-top:6px">💵 Paid ${esc(chosen)} ${money(o.paid.amount)} on ${esc(niceDate(o.paid.date))} (${esc(METHOD[o.paid.method] || o.paid.method)}) — in Payments, Bookkeeping and the 1099 report.</div>`;
+  else if (o.status === 'signed' && o.bill) {
+    const diff = Math.abs(Number(o.bill.amount) - Number(o.pay)) >= 0.01 ? ` <span class="warn">agreed pay was ${money(o.pay)}</span>` : '';
+    body = `<div style="margin-top:8px;padding:10px;background:#fff7ed;border-radius:8px">🧾 <strong>${esc(chosen)}'s bill: ${money(o.bill.amount)}</strong>${diff}
+      ${o.bill.done ? '<br><span class="muted">Work done ' + esc(niceDate(o.bill.done)) + '</span>' : ''}${o.bill.note ? '<br><em>' + esc(o.bill.note) + '</em>' : ''}
+      <div class="muted" style="margin-top:6px">After you pay them, record it here:</div>
+      <div class="payrow"><input id="pa_${esc(o.id)}" type="number" step="0.01" min="0.01" inputmode="decimal" value="${Number(o.bill.amount).toFixed(2)}" aria-label="Amount paid">
+        <input id="pd_${esc(o.id)}" type="date" value="${new Date().toLocaleDateString('en-CA', {timeZone:'America/New_York'})}" aria-label="Date paid">
+        <select id="pm_${esc(o.id)}" aria-label="How you paid">${Object.entries(METHOD).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+        <button class="btn green sm" type="button" onclick="payOffer('${esc(o.id)}')">💵 Mark paid</button></div></div>`;
+  }
+  else if (o.status === 'signed') body = `<div class="muted" style="margin-top:6px">✍️ ${esc(chosen)} signed. They send their bill (with before &amp; after photos) from their link when the job is done.</div>`;
+  else if (o.status === 'chosen') body = `<div class="muted" style="margin-top:6px">You picked <strong>${esc(chosen)}</strong>. They got an email to sign the job agreement.</div>`;
+  const cancel = !o.paid && o.status !== 'signed' ? ` <button class="btn sm danger" type="button" onclick="cancelOffer('${esc(o.id)}')">✖ Cancel offer</button>` : '';
+  return `<div class="job">${head}<div style="margin-top:6px">${answers}</div>${body}${cancel ? '<div class="actions">' + cancel + '</div>' : ''}</div>`;
+}
+async function pickOffer(id, cid){
+  const o = offers.find(x => x.id === id); const name = o && o.invites[cid] ? o.invites[cid].name : 'this contractor';
+  if (!confirm(`Give this job to ${name}? They get an email to sign the job agreement.`)) return;
+  if (await offApi('choose', {offer_id: id, contractor_id: cid})) { say(name + ' picked. They will get an email to sign.', true); loadJobs(); }
+}
+async function payOffer(id){
+  const amount = parseFloat($('pa_' + id).value), date = $('pd_' + id).value, method = $('pm_' + id).value;
+  if (!(amount > 0)) { $('pa_' + id).focus(); return; }
+  if (!confirm(`Record that you paid ${money(amount)} on ${niceDate(date)} (${METHOD[method]})? It goes into Payments, Bookkeeping (Contract Labor) and the 1099 report. The website does not send any money.`)) return;
+  if (await offApi('pay', {offer_id: id, amount, date, method})) { say('Recorded: paid ' + money(amount) + '.', true); loadJobs(); loadContractors(); }
+}
+async function cancelOffer(id){
+  if (!confirm('Cancel this offer? Contractors can no longer take it from their link.')) return;
+  if (await offApi('cancel', {offer_id: id})) { say('Offer cancelled.', true); loadJobs(); }
+}
+
+// ── 1099 report ──
+async function loadReport(){
+  const year = $('repYear').value;
+  $('csvLink').href = API + '?action=report&csv=1&year=' + encodeURIComponent(year);
+  $('thrNote').textContent = `From 2026 a 1099-NEC is needed when you paid a contractor $${Number(threshold).toLocaleString()} or more in the year (it was $600) — have your accountant confirm.`;
+  const d = await api('report', null, '&year=' + year); if (!d) return;
+  if (!d.rows.length) { $('report').innerHTML = '<div class="empty">No contractor payments recorded for ' + esc(year) + '.</div>'; return; }
+  $('report').innerHTML = `<table class="resp"><thead><tr><th>Contractor</th><th>W-9</th><th class="num">Payments</th><th class="num">Total paid</th><th>1099?</th><th></th></tr></thead><tbody>` +
+    d.rows.map((r, i) => `<tr><td data-l="Contractor"><span><strong>${esc(r.name)}</strong>${r.company ? '<br><span class="muted">' + esc(r.company) + '</span>' : ''}</span></td>
+      <td data-l="W-9">${r.w9_received ? '✔ on file' : '<span class="warn bad">missing</span>'}</td><td data-l="Payments" class="num">${r.payments}</td><td data-l="Total paid" class="num"><strong>${money(r.total)}</strong></td>
+      <td data-l="1099 needed?">${r.needs_1099 ? '<strong style="color:var(--red)">Yes</strong>' : 'No'}</td>
+      <td data-l=""><button class="btn sm" type="button" data-copy="${i}">🖨 Copy for them</button></td></tr>`).join('') + '</tbody></table>';
+  reportRows = d.rows; reportYear = year;
+}
+let reportRows = [], reportYear = '';
+$('report').addEventListener('click', e => { const b = e.target.closest('[data-copy]'); if (b) printCopy(reportRows[+b.dataset.copy], reportYear); });
+/** A printable payment summary for one contractor (not the official IRS form). */
+function printCopy(r, year){
+  const w = window.open('', '_blank'); if (!w) { say('Your browser blocked the print window — allow pop-ups for this site.'); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(r.name)} — ${esc(year)} payments</title>
+    <style>body{font-family:system-ui,sans-serif;max-width:640px;margin:40px auto;color:#0f172a;line-height:1.5}h1{font-size:1.3rem}td{padding:6px 10px;border-bottom:1px solid #e2e8f0}</style></head><body>
+    <h1>Patriot Total Property Care LLC — ${esc(year)} payments to you</h1>
+    <p>${esc(r.name)}${r.company ? '<br>' + esc(r.company) : ''}${r.mailing_address ? '<br>' + esc(r.mailing_address) : ''}</p>
+    <table><tr><td>Payments made in ${esc(year)}</td><td>${r.payments}</td></tr><tr><td><strong>Total paid in ${esc(year)}</strong></td><td><strong>${money(r.total)}</strong></td></tr></table>
+    <p>This is a summary of what we paid you as an independent contractor. ${r.needs_1099 ? 'You will also receive the official Form 1099-NEC from our accountant.' : ''} Keep it for your tax records. Questions: (321) 431-9418.</p>
+    <script>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+
+fillYears();
+loadContractors();
+loadOffers();   // 🧾 count on the 📋 Jobs tab
+if (/[?&]tab=jobs/.test(location.search) || /bill/i.test(location.hash)) document.querySelector('[data-tab=jobs]').click();
+</script>
+</body>
+</html>
